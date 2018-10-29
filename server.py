@@ -14,11 +14,19 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     
     registro = {}
-    def registered2json(self):
-        with open("registered.json", "w") as fich_json:
-            data_json = json.dumps(self.registro)
-            fich_json.write(data_json)
-    
+    def register2json(self):
+
+            with open("registered.json", "w") as fich_json:
+                data_json = json.dumps(self.registro)
+                fich_json.write(data_json)
+
+    def json2registered(self):
+        try:
+            with open("registered.json", "r") as fich_json:
+                self.registro = json.load(fich_json)
+        except:
+            pass
+            
     def expired_users(self):
         exp_user=[]
         for user in self.registro:
@@ -37,6 +45,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         """
         str_line = self.rfile.read().decode("utf-8")
         contenido = str_line.split()
+        self.json2registered()
         usuario = contenido[1].split(":")[-1]
         if contenido[0] == "REGISTER":
             ip = self.client_address[0]   
@@ -46,7 +55,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                                                         int(contenido[-1])))
                 self.registro[usuario] =[{"address": ip}, {"expires": expires}] 
         self.expired_users()
-        self.registered2json()
+        self.register2json()
         
         self.wfile.write("SIP/2.0 200 OK\r\n\r\n".encode('utf-8'))
         

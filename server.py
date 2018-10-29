@@ -5,13 +5,31 @@ Clase (y programa principal) para un servidor de eco en UDP simple
 """
 import sys
 import socketserver
-
+import time
+import json
 
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     Echo server class
     """
+    
     registro = {}
+    def registered2json(self):
+        with open("registered.json", "w") as fich_json:
+            data_json = json.dumps(self.registro)
+            fich_json.write(data_json)
+    
+    def expired_users(self):
+        exp_user=[]
+        for user in self.registro:
+            tiempo_actual = time.strftime('%Y-%m-%d %H:%M:%S',
+                                          time.gmtime(time.time()))
+            if tiempo_actual >= self.registro[user][1]["expires"]:
+                exp_user.append(user)
+  
+        for user in exp_user:        
+                del(self.registro[user])
+
     def handle(self):
         """
         handle method of the server class
@@ -19,14 +37,18 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         """
         str_line = self.rfile.read().decode("utf-8")
         contenido = str_line.split()
-        self.wfile.write("SIP/2.0 200 OK\r\n\r\n".encode('utf-8'))
         usuario = contenido[1].split(":")[-1]
         if contenido[0] == "REGISTER":
-            self.registro[usuario] = self.client_address[0]   
-        if contenido[-1] == "0":
-            del(self.registro[usuario])
-        print(self.registro)
+            ip = self.client_address[0]   
+            if contenido[-2] == "Expires:":
+                expires = time.strftime('%Y-%m-%d %H:%M:%S',
+                                            time.gmtime(time.time() +
+                                                        int(contenido[-1])))
+                self.registro[usuario] =[{"address": ip}, {"expires": expires}] 
+        self.expired_users()
+        self.registered2json()
         
+        self.wfile.write("SIP/2.0 200 OK\r\n\r\n".encode('utf-8'))
         
 
 if __name__ == "__main__": 

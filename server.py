@@ -7,29 +7,34 @@ import sys
 import socketserver
 
 
-class EchoHandler(socketserver.DatagramRequestHandler):
+class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     Echo server class
     """
-
+    registro = {}
     def handle(self):
         """
         handle method of the server class
         (all requests will be handled by this method)
         """
-        print(self.client_address)
-        self.wfile.write(b"Hemos recibido tu peticion")
-        for line in self.rfile:
-            print("El cliente nos manda ", line.decode('utf-8'))
+        str_line = self.rfile.read().decode("utf-8")
+        contenido = str_line.split()
+        self.wfile.write("SIP/2.0 200 OK\r\n\r\n".encode('utf-8'))
+        if contenido[0] == "REGISTER":
+            usuario = contenido[1].split(":")[-1]
+            self.registro[usuario] = self.client_address[0]
+        print(self.client_address)    
+        print(self.registro)
+        
+        
 
-
-if __name__ == "__main__":
+if __name__ == "__main__": 
     # Listens at localhost ('') port 6001
     # and calls the EchoHandler class to manage the request
     PORT = int(sys.argv[1])
-    serv = socketserver.UDPServer(('', PORT), EchoHandler)
+    serv = socketserver.UDPServer(('', PORT), SIPRegisterHandler)
 
-    print("Lanzando servidor UDP de eco...")
+    print("Lanzando servidor UDP de registro...")
     try:
         serv.serve_forever()
     except KeyboardInterrupt:

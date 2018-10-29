@@ -20,10 +20,11 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         str_line = self.rfile.read().decode("utf-8")
         contenido = str_line.split()
         self.wfile.write("SIP/2.0 200 OK\r\n\r\n".encode('utf-8'))
+        usuario = contenido[1].split(":")[-1]
         if contenido[0] == "REGISTER":
-            usuario = contenido[1].split(":")[-1]
-            self.registro[usuario] = self.client_address[0]
-        print(self.client_address)    
+            self.registro[usuario] = self.client_address[0]   
+        if contenido[-1] == "0":
+            del(self.registro[usuario])
         print(self.registro)
         
         
